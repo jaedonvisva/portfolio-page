@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { GithubIcon, ExternalLinkIcon, CodeIcon } from "lucide-react"
 import { useInView } from "@/hooks/use-in-view"
 import { cn } from "@/lib/utils"
+import { type CustomProject, customProjects } from "@/data/custom-projects"
 
 type Repository = {
   name: string
@@ -14,10 +15,17 @@ type Repository = {
   languages: string[]
 }
 
-export function GithubProjects({ username }: { username: string }) {
+type ProjectProps = {
+  username: string
+  includeCustomProjects?: boolean
+  customProjectsFirst?: boolean
+}
+
+export function GithubProjects({ username, includeCustomProjects = true, customProjectsFirst = false }: ProjectProps) {
   const [repos, setRepos] = useState<Repository[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [allProjects, setAllProjects] = useState<(Repository | CustomProject)[]>([])
 
   useEffect(() => {
     async function fetchPinnedRepos() {
@@ -33,6 +41,15 @@ export function GithubProjects({ username }: { username: string }) {
 
         const pinnedRepos = await response.json()
         setRepos(pinnedRepos)
+
+        // Combine GitHub and custom projects
+        let combined = [...pinnedRepos]
+
+        if (includeCustomProjects) {
+          combined = customProjectsFirst ? [...customProjects, ...pinnedRepos] : [...pinnedRepos, ...customProjects]
+        }
+
+        setAllProjects(combined)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load GitHub repositories")
         console.error(err)
@@ -43,8 +60,12 @@ export function GithubProjects({ username }: { username: string }) {
 
     if (username) {
       fetchPinnedRepos()
+    } else if (includeCustomProjects) {
+      // If no GitHub username but custom projects are enabled
+      setAllProjects(customProjects)
+      setLoading(false)
     }
-  }, [username])
+  }, [username, includeCustomProjects, customProjectsFirst])
 
   if (loading) {
     return (
@@ -55,28 +76,35 @@ export function GithubProjects({ username }: { username: string }) {
     )
   }
 
-  if (error) {
+  if (error && !includeCustomProjects) {
     return <div className="text-center py-8 text-red-500">{error}</div>
   }
 
-  if (repos.length === 0) {
-    return <div className="text-center py-8">No pinned repositories found. Pin some repositories on GitHub!</div>
+  if (allProjects.length === 0) {
+    return <div className="text-center py-8">No projects found.</div>
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {repos.map((repo, index) => (
-        <AnimatedProject
-          key={repo.name}
-          title={repo.name.replace(/-/g, " ").replace(/_/g, " ")}
-          description={repo.description}
-          technologies={repo.topics || []}
-          languages={repo.languages || []}
-          github={repo.html_url}
-          demo={repo.homepage}
-          delay={index * 100}
-        />
-      ))}
+      {allProjects.map((project, index) => {
+        // Check if it's a custom project by looking for the 'technologies' property
+        const isCustomProject = "technologies" in project
+
+        return (
+          <AnimatedProject
+            key={`${isCustomProject ? "custom" : "github"}-${project.name}-${index}`}
+            title={project.name.replace(/-/g, " ").replace(/_/g, " ")}
+            description={project.description}
+            technologies={
+              isCustomProject ? (project as CustomProject).technologies : (project as Repository).topics || []
+            }
+            languages={isCustomProject ? (project as CustomProject).languages : (project as Repository).languages || []}
+            github={isCustomProject ? (project as CustomProject).github : (project as Repository).html_url}
+            demo={isCustomProject ? (project as CustomProject).demo : (project as Repository).homepage}
+            delay={index * 100}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -94,7 +122,7 @@ function AnimatedProject({
   description: string
   technologies: string[]
   languages: string[]
-  github: string
+  github?: string
   demo?: string | null
   delay?: number
 }) {
@@ -120,7 +148,7 @@ function AnimatedProject({
         ))}
       </div>
 
-      {languages.length > 0 && (
+      {languages && languages.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {languages.map((lang, index) => (
             <span
@@ -135,10 +163,17 @@ function AnimatedProject({
       )}
 
       <div className="flex gap-3 text-sm">
-        <a href={github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
-          <GithubIcon className="w-4 h-4" />
-          GitHub
-        </a>
+        {github && (
+          <a
+            href={github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:underline"
+          >
+            <GithubIcon className="w-4 h-4" />
+            GitHub
+          </a>
+        )}
         {demo && (
           <a href={demo} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
             <ExternalLinkIcon className="w-4 h-4" />

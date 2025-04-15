@@ -19,7 +19,7 @@ export default function Home() {
             <Link href="/about" className="hover:underline">
               about
             </Link>
-            <Link href="https://drive.google.com/drive/folders/1NT32FAcfo1nJadgju_SBq9StJYHSTDL8" className="hover:underline">
+            <Link href="/resume" className="hover:underline">
               resume
             </Link>
           </div>
@@ -58,7 +58,11 @@ export default function Home() {
         {/* Projects Section */}
         <AnimatedSection className="mb-20" delay={100}>
           <h2 className="text-xl font-medium mb-8">Projects</h2>
-          <GithubProjects username="JaedonVisva" />
+          <GithubProjects
+            username="JaedonVisva"
+            includeCustomProjects={true}
+            customProjectsFirst={false} // Set to true if you want custom projects to appear first
+          />
         </AnimatedSection>
 
         {/* Experience Section */}
