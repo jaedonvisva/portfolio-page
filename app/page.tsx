@@ -36,8 +36,7 @@ export default function Home() {
 
             <div className="space-y-4">
               <p>
-                I love crafting cutting-edge solutions at the intersection of AI, brain-computer interfaces, and
-                software development, driving innovation through technology and collaboration.
+                I am passionate about building impactful tech — from full-stack apps to AI-powered tools that solve real-world problems.
               </p>
             </div>
           </div>
@@ -57,19 +56,26 @@ export default function Home() {
 
         {/* Projects Section */}
         <AnimatedSection className="mb-20" delay={100}>
-          <h2 className="text-xl font-medium mb-8">Projects</h2>
+          <h2 className="text-xl font-medium mb-8">What I&apos;ve Worked On</h2>
           <GithubProjects
             username="JaedonVisva"
             includeCustomProjects={true}
-            customProjectsFirst={false} // Set to true if you want custom projects to appear first
+            customProjectsFirst={true} // Set to true if you want custom projects to appear first
           />
         </AnimatedSection>
 
         {/* Experience Section */}
         <AnimatedSection className="mb-20" delay={200}>
-          <h2 className="text-xl font-medium mb-8">Where I&apos;ve Been</h2>
-
+          <h2 className="text-xl font-medium mb-8">Where I&apos;ve Worked</h2>
+          
           <div className="space-y-6">
+            <AnimatedExperience
+              logo="blackstone"
+              company="Blackstone Energy Services"
+              position="Machine Learning Intern"
+              date="Summer 2025"
+              delay={300}
+            />
             <AnimatedExperience
               logo="ammu"
               company="Ammu IT Consulting"
@@ -77,7 +83,13 @@ export default function Home() {
               date="Summer 2024"
               delay={0}
             />
-
+            <AnimatedExperience
+              logo="holland"
+              company="Holland Bloorview Kids Rehabilitation Hospital"
+              position="Robotics Instructor"
+              date="Summer 2024"
+              delay={200}
+            />
             <AnimatedExperience
               logo="ellisdon"
               company="EllisDon"
@@ -86,13 +98,7 @@ export default function Home() {
               delay={100}
             />
 
-            <AnimatedExperience
-              logo="holland"
-              company="Holland Bloorview Kids Rehabilitation Hospital"
-              position="Robotics Instructor"
-              date="Summer 2024"
-              delay={200}
-            />
+            
 
             <div className="border-t border-gray-200 dark:border-gray-700 my-8"></div>
 
@@ -141,8 +147,8 @@ function AnimatedExperience({ logo, company, position, date, delay = 0 }) {
         <CompanyLogo type={logo} />
       </div>
       <div className="flex-1">
-        <div className="font-medium">{company}</div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">{position}</div>
+        <div className="font-medium">{position}</div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">{company}</div>
       </div>
       <div className="flex items-center">
         <div className="border-t border-dotted border-gray-300 dark:border-gray-700 w-16 md:w-32 mr-4"></div>
