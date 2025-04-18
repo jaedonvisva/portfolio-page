@@ -19,7 +19,7 @@ export default function Home() {
             <Link href="/about" className="hover:underline">
               about
             </Link>
-            <Link href="/resume" className="hover:underline">
+            <Link href="https://drive.google.com/drive/folders/1NT32FAcfo1nJadgju_SBq9StJYHSTDL8" className="hover:underline">
               resume
             </Link>
           </div>
