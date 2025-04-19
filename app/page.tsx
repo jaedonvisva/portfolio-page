@@ -143,7 +143,7 @@ function AnimatedExperience({ logo, company, position, date, delay = 0 }) {
       )}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <div className="w-8 mr-4 mt-1">
+      <div className="w-8 mr-8 mt-1">
         <CompanyLogo type={logo} />
       </div>
       <div className="flex-1">

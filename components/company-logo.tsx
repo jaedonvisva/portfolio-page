@@ -25,12 +25,12 @@ export function CompanyLogo({ type }: { type: string }) {
 
   // Try to load the image
   return (
-    <div className="w-6 h-6 flex items-center justify-center">
+    <div className="w-12 h-12 flex items-center justify-center">
       <Image
         src={`/logos/${type}.svg`}
         alt={`${type} logo`}
-        width={24}
-        height={24}
+        width={40}
+        height={40}
         className="object-contain"
         onError={() => setImageError(true)}
       />
@@ -44,7 +44,7 @@ function FallbackLogo({ type }: { type: string }) {
   // Return a colored circle as fallback
   return (
     <div className={colorClass}>
-      <CircleIcon className="w-6 h-6" />
+      <CircleIcon className="w-12 h-12" />
     </div>
   )
 }
