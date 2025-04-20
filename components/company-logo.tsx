@@ -27,7 +27,7 @@ export function CompanyLogo({ type }: { type: string }) {
   return (
     <div className="w-12 h-12 flex items-center justify-center">
       <Image
-        src={`//logos/${type}.svg`} // Adjust the path as needed
+        src={`/logos/${type}.svg`} // Adjust the path as needed
         alt={`${type} logo`}
         width={40}
         height={40}
