@@ -60,6 +60,26 @@ async function getRecentlyPlayed(access_token: string) {
   return data.items?.[0] || null
 }
 
+async function getPlaylistName(access_token: string, playlistId: string) {
+  try {
+    const response = await fetch(`${SPOTIFY_API_BASE}/playlists/${playlistId}`, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+      },
+    })
+    
+    if (!response.ok) {
+      return null
+    }
+    
+    const playlist = await response.json()
+    return playlist.name
+  } catch (error) {
+    console.error('Error fetching playlist name:', error)
+    return null
+  }
+}
+
 export async function GET() {
   try {
     const { access_token } = await getAccessToken()
@@ -82,6 +102,22 @@ export async function GET() {
 
     if (!track || !track.item) {
       return NextResponse.json({ isPlaying: false })
+    }
+
+    // Check if the track is from a "guilty pleasures" playlist
+    const context = track.context
+    if (context && context.type === 'playlist') {
+      // Extract playlist ID from URI (format: spotify:playlist:ID)
+      const playlistId = context.uri?.split(':')[2]
+      if (playlistId) {
+        const playlistName = await getPlaylistName(access_token, playlistId)
+        if (playlistName) {
+          const lowerName = playlistName.toLowerCase()
+          if (lowerName.includes('guilty') && lowerName.includes('pleasure')) {
+            return NextResponse.json({ isPlaying: false })
+          }
+        }
+      }
     }
 
     const song = track.item
