@@ -94,7 +94,7 @@ export function WakaTimeStatus() {
             <Code className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             <div className="flex-1">
               <span className="text-sm font-medium">
-                {data.isCoding ? 'Currently coding' : 'Not coding'}
+                {data.isCoding ? '🚀 In the zone' : '💤 Offline'}
               </span>
               {data.isCoding && (data.currentProject || data.currentLanguage) && (
                 <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">

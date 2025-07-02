@@ -64,7 +64,7 @@ export default function Home() {
               <SpotifyNowPlaying />
             </div>
             <div>
-              <h2 className="text-xl font-medium mb-6">Coding Activity</h2>
+              <h2 className="text-xl font-medium mb-6">Dev Status</h2>
               <WakaTimeStatus />
             </div>
           </div>
