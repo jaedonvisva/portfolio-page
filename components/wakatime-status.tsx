@@ -53,8 +53,8 @@ export function WakaTimeStatus() {
 
     fetchWakaTimeData()
     
-    // Refresh every 2 minutes
-    const interval = setInterval(fetchWakaTimeData, 120000)
+    // Refresh every 5 seconds
+    const interval = setInterval(fetchWakaTimeData, 5000)
     
     return () => clearInterval(interval)
   }, [])
