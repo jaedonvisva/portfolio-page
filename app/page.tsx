@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { CompanyLogo } from "@/components/company-logo"
 import { GithubProjects } from "@/components/github-projects"
 import { SpotifyNowPlaying } from "@/components/spotify-now-playing"
+import { WakaTimeStatus } from "@/components/wakatime-status"
 
 export default function Home() {
   return (
@@ -55,10 +56,18 @@ export default function Home() {
           </div>
         </AnimatedSection>
 
-        {/* Spotify Section */}
+        {/* Status Section */}
         <AnimatedSection className="mb-20" delay={50}>
-          <h2 className="text-xl font-medium mb-6">Currently Listening To</h2>
-          <SpotifyNowPlaying />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h2 className="text-xl font-medium mb-6">Currently Listening To</h2>
+              <SpotifyNowPlaying />
+            </div>
+            <div>
+              <h2 className="text-xl font-medium mb-6">Coding Activity</h2>
+              <WakaTimeStatus />
+            </div>
+          </div>
         </AnimatedSection>
 
         {/* Projects Section */}
