@@ -55,14 +55,6 @@ export default function Home() {
           </div>
         </AnimatedSection>
 
-        {/* Status Section */}
-        <AnimatedSection className="mb-20" delay={50}>
-          <div>
-            <h2 className="text-xl font-medium mb-6">Currently Listening To</h2>
-            <SpotifyNowPlaying />
-          </div>
-        </AnimatedSection>
-
         {/* Projects Section */}
         <AnimatedSection className="mb-20" delay={100}>
           <h2 className="text-xl font-medium mb-8">What I&apos;ve Worked On</h2>
