@@ -1,36 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { MoonIcon, SunIcon } from "lucide-react"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
+import { Sun, Moon } from "lucide-react"
 
 export function ThemeToggle() {
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { setTheme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    // Check if user has a preference stored
-    const savedTheme = localStorage.getItem("theme")
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+  useEffect(() => setMounted(true), [])
 
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true)
-      document.documentElement.classList.add("dark")
-    }
-  }, [])
-
-  const toggleTheme = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove("dark")
-      localStorage.setItem("theme", "light")
-    } else {
-      document.documentElement.classList.add("dark")
-      localStorage.setItem("theme", "dark")
-    }
-    setIsDarkMode(!isDarkMode)
+  if (!mounted) {
+    return (
+      <button
+        className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground"
+        aria-label="Toggle theme"
+      >
+        <Sun className="w-4 h-4" />
+      </button>
+    )
   }
 
+  const isDark = resolvedTheme === "dark"
+
   return (
-    <button onClick={toggleTheme} className="p-1 rounded-full" aria-label="Toggle dark mode">
-      {isDarkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+    >
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
     </button>
   )
 }

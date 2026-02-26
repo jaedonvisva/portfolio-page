@@ -1,13 +1,33 @@
-import type React from "react"
-import "./globals.css"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import type { Metadata, Viewport } from 'next'
+import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import './globals.css'
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+})
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#1a1a1a',
+}
 
 export const metadata: Metadata = {
-  title: "Jaedon Visva",
-  description: "Jaedon Visva's Portfolio",
+  title: 'Portfolio',
+  description: 'Quantitative research, machine learning, and software engineering.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon-dark-32x32.png',
+    apple: '/apple-icon.png',
+  },
 }
 
 export default function RootLayout({
@@ -16,27 +36,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-          (function() {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-              document.documentElement.classList.add('dark');
-            }
-          })();
-        `,
-          }}
-        />
-      </head>
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} bg-background dark`} suppressHydrationWarning>
+      <body className="font-sans antialiased">
+        {children}
+        <Analytics />
+      </body>
     </html>
   )
 }
-
-
-import './globals.css'
