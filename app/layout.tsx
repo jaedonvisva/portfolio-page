@@ -21,12 +21,12 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Portfolio',
+  title: 'jaedon visva',
   description: 'Quantitative research, machine learning, and software engineering.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon-dark-32x32.png',
-    apple: '/apple-icon.png',
+    icon: '/logos/favicon/favicon.ico',
+    apple: '/logos/favicon/apple-touch-icon.png',
   },
 }
 
