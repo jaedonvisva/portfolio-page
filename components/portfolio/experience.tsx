@@ -14,7 +14,7 @@ const roles: Role[] = [
     company: "Berkeley Street Capital",
     title: "Quantitative Research Intern",
     description: "Crypto microstructure signal generation",
-    href: "https://berkeleystreetcapital.com",
+    href: "https://berkeleystreet.ai",
     period: "W26",
     logo: "/logos/berkeley-street-capital.jpg",
   },
@@ -49,20 +49,9 @@ export function Experience() {
             <div className="flex flex-col gap-1 min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-4">
                 <div className="flex items-baseline gap-2 min-w-0">
-                  {role.href ? (
-                    <a
-                      href={role.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-base md:text-lg font-medium text-foreground hover:text-muted-foreground transition-colors truncate"
-                    >
-                      {role.company}
-                    </a>
-                  ) : (
-                    <span className="text-base md:text-lg font-medium text-foreground truncate">
-                      {role.company}
-                    </span>
-                  )}
+                  <span className="text-base md:text-lg font-medium text-foreground truncate">
+                    {role.title}
+                  </span>
                 </div>
                 <span className="text-sm font-mono text-muted-foreground shrink-0">
                   {role.period}
@@ -71,7 +60,20 @@ export function Experience() {
               <div className="flex flex-col gap-1 mt-0.5">
                 <div className="flex items-start gap-2 text-base text-muted-foreground">
                   <span className="text-muted-foreground/40 shrink-0 select-none">↳</span>
-                  <span>{role.title}</span>
+                  {role.href ? (
+                    <a
+                      href={role.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-base text-muted-foreground hover:text-foreground hover:underline transition-colors truncate"
+                    >
+                      {role.company}
+                    </a>
+                  ) : (
+                    <span className="text-base text-muted-foreground truncate">
+                      {role.company}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-start gap-2 text-base text-muted-foreground pl-5">
                   <span className="text-muted-foreground/40 shrink-0 select-none">↳</span>

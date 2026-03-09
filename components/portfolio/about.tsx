@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import useSWR from "swr"
+import { motion } from "framer-motion"
 
 interface NowPlaying {
   isPlaying: boolean
@@ -12,6 +13,28 @@ interface NowPlaying {
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+function PlayingAnimation() {
+  return (
+    <span className="inline-flex items-end gap-[1.5px] h-3 w-3 relative top-px">
+      <motion.span
+        className="w-[1.5px] bg-foreground block"
+        animate={{ height: ["25%", "100%", "25%"] }}
+        transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.span
+        className="w-[1.5px] bg-foreground block"
+        animate={{ height: ["50%", "90%", "30%"] }}
+        transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+      />
+      <motion.span
+        className="w-[1.5px] bg-foreground block"
+        animate={{ height: ["75%", "30%", "80%"] }}
+        transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+      />
+    </span>
+  )
+}
 
 function NowPlayingInline() {
   const { data, isLoading } = useSWR<NowPlaying>(
@@ -48,6 +71,7 @@ function NowPlayingInline() {
           {" by "}
           {data.artist}
         </span>
+        <PlayingAnimation />
       </a>
     )
   }
@@ -101,7 +125,6 @@ export function About() {
       <p className="mt-4 text-base md:text-lg leading-[1.75] text-muted-foreground">
         {"in my free time, i like to play basketball, ski, play the guitar, and listen to music; right now it's "}
         <NowPlayingInline />
-        {"."}
       </p>
     </section>
   )
