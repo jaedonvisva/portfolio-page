@@ -104,7 +104,7 @@ export function About() {
           />
           university of waterloo
         </a>
-        {". currently interning at "}
+        {". i just finished an internship at "}
         <a
           href="https://berkeleystreet.ai/"
           target="_blank"
@@ -120,7 +120,7 @@ export function About() {
           />
           berkeley street capital
         </a>
-        {" doing quantitative research on crypto microstructure signal generation."}
+        {" where i worked on crypto microstructure signal generation."}
       </p>
       <p className="mt-4 text-base md:text-lg leading-[1.75] text-muted-foreground">
         {"in my free time, i like to play basketball, ski, play the guitar, and listen to music; right now it's "}
