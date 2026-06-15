@@ -3,6 +3,7 @@ import { JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Cursor } from '@/components/cursor'
 import { ThemeProvider } from '@/components/theme-provider'
+import { CommandPalette } from '@/components/command-palette'
 import './globals.css'
 
 const jetbrainsMono = JetBrains_Mono({
@@ -39,6 +40,7 @@ export default function RootLayout({
           {children}
           <Analytics />
           <Cursor />
+          <CommandPalette />
         </ThemeProvider>
       </body>
     </html>

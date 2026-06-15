@@ -17,7 +17,15 @@ export function Header() {
       >
         [JV]
       </p>
-      <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }))}
+          className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md border border-border text-xs font-mono text-muted-foreground/60 hover:text-muted-foreground hover:border-border/80 transition-colors select-none"
+        >
+          <kbd>⌘K</kbd>
+        </button>
+        <ThemeToggle />
+      </div>
     </header>
   )
 }

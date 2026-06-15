@@ -11,11 +11,11 @@ export default function Page() {
       <CanvasBg />
       <div className="relative z-10 mx-auto max-w-[680px] px-6 py-12 md:py-24 animate-in fade-in duration-700">
         <Header />
-        <About />
+        <div id="about"><About /></div>
         <div className="h-px bg-border my-10 md:my-14" role="separator" />
-        <Experience />
+        <div id="experience"><Experience /></div>
         <div className="h-px bg-border my-10 md:my-14" role="separator" />
-        <Projects />
+        <div id="projects"><Projects /></div>
         <Footer />
       </div>
     </main>
