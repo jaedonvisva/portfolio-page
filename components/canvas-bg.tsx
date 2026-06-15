@@ -1,13 +1,15 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
+import { useTheme } from "next-themes"
 
 export function CanvasBg() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   const mouseRef = useRef({ x: -1000, y: -1000 })
   const dotsRef = useRef<{ x: number; y: number; baseX: number; baseY: number; vx: number; vy: number }[]>([])
-  const isDark = true
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme !== "light"
 
   const initDots = useCallback((width: number, height: number) => {
     const spacing = 32
