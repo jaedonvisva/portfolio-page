@@ -76,7 +76,7 @@ export function CommandPalette() {
       sublabel: "ML Intern · S25",
       group: "Experience",
       detail: {
-        title: "Machine Learning Intern",
+        title: "Machine Learning Engineer Intern",
         subtitle: "Blackstone Energy",
         meta: "Summer 2025",
         description: "ML pipelines for large-scale energy demand forecasting.",

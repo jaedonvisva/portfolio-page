@@ -33,7 +33,7 @@ const roles: Role[] = [
   },
   {
     company: "Blackstone Energy",
-    title: "Machine Learning Intern",
+    title: "Machine Learning Engineer Intern",
     description: "ML pipelines for large-scale energy demand forecasting",
     href: "https://www.blackstoneenergy.com",
     period: "S25",
