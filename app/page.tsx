@@ -1,5 +1,5 @@
 import { CanvasBg } from "@/components/canvas-bg"
-import { Header } from "@/components/portfolio/header"
+import { Navbar } from "@/components/navbar"
 import { About } from "@/components/portfolio/about"
 import { Experience } from "@/components/portfolio/experience"
 import { Projects } from "@/components/portfolio/projects"
@@ -10,7 +10,7 @@ export default function Page() {
     <main className="relative min-h-dvh bg-background text-foreground">
       <CanvasBg />
       <div className="relative z-10 mx-auto max-w-[680px] px-6 py-12 md:py-24 animate-in fade-in duration-700">
-        <Header />
+        <Navbar />
         <div id="about"><About /></div>
         <div className="h-px bg-border my-10 md:my-14" role="separator" />
         <div id="experience"><Experience /></div>
