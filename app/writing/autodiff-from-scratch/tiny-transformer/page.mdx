@@ -1,0 +1,198 @@
+import { PostHeader } from "@/components/writing/post-header"
+import { getPost } from "@/lib/writing"
+
+export const metadata = {
+  title: `${getPost("tiny-transformer").title} — jaedon visva`,
+  description: "Four new gradient rules, a hand-written Adam optimizer, and a memory bug that crashed the first training run.",
+}
+
+<PostHeader {...getPost("tiny-transformer")} />
+
+<div className="mb-10 rounded-lg border border-border bg-muted/20 px-5 py-4 text-sm leading-relaxed">
+  <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground/50">Summary</div>
+  <div className="mb-3 text-muted-foreground">
+    Trained a 162K-parameter character-level transformer end to end on <code>Tensor</code>: embeddings, causal self-attention, layer norm, a feedforward block, cross-entropy loss, and a from-scratch Adam optimizer. Zero PyTorch in the model itself.
+  </div>
+  <div className="mb-2 text-xs font-mono uppercase tracking-widest text-muted-foreground/50">Key takeaways</div>
+  <ul className="mb-3 ml-4 list-disc space-y-1 text-muted-foreground marker:text-muted-foreground/40">
+    <li className="pl-1">Attention and layer norm needed only four new primitives on top of the existing tensor engine: <code>log</code>, <code>swapaxes</code>, <code>embedding</code>, and <code>layer_norm</code></li>
+    <li className="pl-1">Every <code>_backward</code> closure captures its own output node, so every node in the graph is a reference cycle; a training loop that discards a full graph every step leaks memory fast enough to crash the process</li>
+    <li className="pl-1">The full architecture was gradient-checked end to end against an independent PyTorch reimplementation, not just op by op</li>
+  </ul>
+  <div className="mb-2 text-xs font-mono uppercase tracking-widest text-muted-foreground/50">What's next</div>
+  <div className="text-muted-foreground">
+    A separate autograd-free inference path with a KV cache, benchmarked against this training-time implementation.
+  </div>
+</div>
+
+The engine already supports batched tensors, broadcasting, and softmax. This uses it to train an actual transformer: embeddings, causal self-attention, layer norm, a feedforward block, cross-entropy loss, and Adam, all implemented from the same local-gradient-rule pattern as everything else in it. It trains on character-level Shakespeare and produces gradients that match PyTorch's to `1e-6`.
+
+## Four new primitives
+
+Attention and layer norm need four additions to `Tensor` beyond `matmul` and `softmax`.
+
+**`log`** is the same shape as `exp`: `out = log(x)`, `∂out/∂x = 1/x`.
+
+```python
+def log(self):
+    out = Tensor(np.log(self.data), (self,), "log")
+    def _backward():
+        self.grad += out.grad / self.data
+    out._backward = _backward
+    return out
+```
+
+**`swapaxes(axis1, axis2)`** computes `Kᵀ` for attention scores without leaving the graph. Swapping two axes is its own inverse, so the backward rule swaps the upstream gradient back the same way:
+
+```python
+def swapaxes(self, axis1, axis2):
+    out = Tensor(np.swapaxes(self.data, axis1, axis2), (self,), "swapaxes")
+    def _backward():
+        self.grad += np.swapaxes(out.grad, axis1, axis2)
+    out._backward = _backward
+    return out
+```
+
+**`embedding(indices)`** is a weight matrix `E` of shape `(vocab_size, embed_dim)`, indexed by integer token ids. The forward pass is a gather, `E[indices]`. The backward pass is a scatter-add: every row of `E` that was looked up gets the upstream gradient added into it, and a row indexed `k` times accumulates `k` separate contributions.
+
+```python
+def _backward():
+    grad = np.zeros_like(self.data)
+    np.add.at(grad, indices, out.grad)   # scatter-add, not grad[indices] += out.grad
+    self.grad += grad
+```
+
+`np.add.at` matters here specifically because plain fancy-index assignment silently drops all but the last write when an index repeats, and common characters like `' '` or `'e'` repeat constantly within a single text batch. This is the same principle as `_unbroadcast` for broadcasting (a value used more than once accumulates gradient from every use), just with data-dependent reuse instead of a fixed broadcast shape.
+
+**`layer_norm(gamma, beta, eps, axis)`** normalizes each token's feature vector to zero mean and unit variance, then applies a learned scale and shift:
+
+$$
+\mu = \mathrm{mean}(x), \qquad \sigma^2 = \mathrm{mean}((x-\mu)^2), \qquad \hat{x} = \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}, \qquad \mathrm{out} = \gamma\hat{x}+\beta
+$$
+
+`μ` and `σ²` are functions of every element of `x`, so nudging one element perturbs the normalization of every other element too, and deriving that Jacobian by hand is genuinely involved. Instead `layer_norm` is written purely as a composition of already gradient-checked primitives:
+
+```python
+def layer_norm(self, gamma, beta, eps=1e-5, axis=-1):
+    mu = self.mean(axis=axis, keepdims=True)
+    xmu = self - mu
+    var = (xmu ** 2).mean(axis=axis, keepdims=True)
+    xhat = xmu / (var + eps) ** 0.5
+    return xhat * gamma + beta
+```
+
+Every op here (`mean`, `sub`, `pow`, `truediv`, `mul`, `add`) already has a correct backward rule, so the composed backward rule is correct automatically, the same pattern used for `sub`/`truediv`/`mean` throughout the engine. All four additions are gradient-checked against PyTorch, including a repeated-index case for `embedding` that specifically exercises the scatter-add path.
+
+## Self-attention
+
+Single-head scaled dot-product self-attention, embedding dimension 64, 3 layers:
+
+$$
+Q = XW_q,\quad K = XW_k,\quad V = XW_v, \qquad \mathrm{scores} = \frac{QK^\top}{\sqrt{d_k}}
+$$
+
+$$
+\mathrm{attn} = \mathrm{softmax}(\mathrm{scores} + \mathrm{mask}), \qquad \mathrm{out} = (\mathrm{attn}\,V)W_o + b_o
+$$
+
+Every operation here (`matmul`, `swapaxes`, `softmax`, elementwise add) already exists and is gradient-checked. The causal mask is a constant `(T, T)` matrix, `0` on and below the diagonal and `-inf` strictly above it, added to the scores before softmax. Subtracting the row max before exponentiating, already built into `softmax`, means `exp(-inf - max) = 0` exactly, so masked positions get zero attention weight with no special-casing required.
+
+## Transformer block, output head, and cross-entropy
+
+A pre-norm residual block:
+
+$$
+x = x + \mathrm{attention}(\mathrm{layernorm}(x)), \qquad x = x + \mathrm{feedforward}(\mathrm{layernorm}(x))
+$$
+
+with `feedforward(x) = relu(x W1 + b1) W2 + b2`. Three of these blocks, a final `layer_norm`, and a linear projection to vocabulary size. Cross-entropy loss is softmax followed by a gather of the target-token probability and a `log`/`mean` reduction:
+
+```python
+def cross_entropy_loss(logits, targets):
+    probs = logits.softmax(axis=-1)
+    one_hot = Tensor(np.eye(logits.shape[-1])[targets])   # constant, not a parameter
+    target_probs = (probs * one_hot).sum(axis=-1)
+    return -((target_probs + 1e-12).log()).mean()
+```
+
+The gather is a one-hot multiply-and-sum rather than a new indexing primitive, so it reuses `mul`, `sum`, and `log`, all already verified. The `1e-12` floor guards against `log(0) = -inf` poisoning the loss with a `nan` gradient; with float64 throughout, probabilities never actually underflow to zero at this scale, but the guard costs nothing.
+
+## Adam, by hand
+
+The optimizer operates directly on `.data`/`.grad` NumPy arrays rather than through the `Tensor` graph, since the update itself isn't part of the differentiable computation:
+
+$$
+m_t = \beta_1 m_{t-1} + (1-\beta_1)g, \qquad v_t = \beta_2 v_{t-1} + (1-\beta_2)g^2
+$$
+
+$$
+\hat{m}_t = \frac{m_t}{1-\beta_1^t}, \qquad \hat{v}_t = \frac{v_t}{1-\beta_2^t}, \qquad p \mathrel{-}= \frac{\mathrm{lr}\cdot\hat{m}_t}{\sqrt{\hat{v}_t}+\epsilon}
+$$
+
+`m` is a decaying average of the gradient, `v` a decaying average of the squared gradient, and the bias-correction terms compensate for `m` and `v` starting at zero. Tested against `torch.optim.Adam` on the same toy quadratic for 20 steps: parameters match to `1e-8` at every step, not just at the end.
+
+## Verifying correctness end to end
+
+Beyond checking each new primitive individually, the entire architecture is reimplemented a second time in raw PyTorch, with weights copied directly from the trained model, and both forward and backward passes are compared: every attention projection, every layer norm scale and shift, every feedforward weight, the embeddings, and the output head, across both transformer blocks. Forward output and every parameter's gradient match to `1e-6`. This checks the full attention plus layer norm plus feedforward plus cross-entropy stack as one composition, not each op in isolation.
+
+## A real bug: reference cycles and unbounded memory
+
+The first full training run crashed. Every `_backward` closure reads `out.grad`, which means it closes over `out`, so every `Tensor` node created during a forward pass holds a reference cycle back to itself (`out._backward → closure → out`). Building one graph and calling `.backward()` once leaves a handful of harmless leaked cycles, easy to miss. A training loop is different. It builds and discards a full attention-stack graph (~130 nodes) every step, and Python's cyclic garbage collector couldn't reclaim them fast enough. Memory grew to tens of gigabytes within a few hundred steps, and the OS killed the process.
+
+The fix, in `backward()`: once every node's `_backward()` has run and all gradients are computed, the graph is disposable, since nothing calls into it again. `backward()` now walks the topological order a second time and explicitly clears `_backward` and `_prev` on every node, breaking the cycle so plain refcounting frees the graph immediately instead of waiting on a GC sweep:
+
+```python
+for v in topo:
+    v._backward = lambda: None
+    v._prev = set()
+```
+
+Peak resident memory during a 300-step run went from unbounded growth to a flat ~1.75GB from step 50 onward. The same latent bug existed in the original scalar engine and got the same fix, even though it never manifested there: those workloads are too small to expose it. It's the kind of bug that's invisible at unit-test scale and only shows up once the thing actually runs for real.
+
+## Result: char-level Shakespeare
+
+Trained on the ~1.1MB Tiny Shakespeare corpus, 65-character vocabulary, `TinyTransformer(vocab_size=65, block_size=64, embed_dim=64, n_layers=3, hidden_dim=256)`, 161,985 parameters, Adam at `lr=3e-4`, batch size 32, 4000 steps:
+
+```
+step 0:    train 4.2912, val 4.2927   (random-guess baseline: ln(65) ≈ 4.174)
+step 1000: train 2.1483, val 2.1942
+step 2000: train 1.8728, val 1.9883
+step 3000: train 1.7609, val 1.8816
+step 3999: train 1.6667, val 1.8447
+4000 steps took 1022.9s on CPU (255.7 ms/step average, including periodic eval passes)
+```
+
+![Training and validation cross-entropy loss over 4000 steps, both curves dropping from ~4.3 to under 1.9 with no divergence between them](/writing/autodiff-from-scratch/loss-curve.png)
+
+Train and validation loss track closely throughout, with no overfitting at this scale. Sampling from the model before and after training:
+
+```
+before training (random weights):
+S$;3;xRFIJIyhJqW3I$$epfYV.Ix.Bv,KkI&h$heP
+giYxU$KddpI.c
+l'.$F$K;.UFF$&WcF'UK!'DUpe.xVIZPdcppU&IPXcMwMUcFK?wLCGKFHBvc:f,GhUyBLvSoqyFFP$xv!xFebDUYyGh.ZuI'vnPsF,U'kJvU,hU.T .$xPPOG!UyGfUnY$cvUFX$v?PIUIII,$IUU vUfLqeegXk'-IKVUIKgeFF,KKYU$IFexuIPUKUKpeKpeKkUUpooXmhKP
+
+after training (4000 steps):
+BROKE:
+In am the victorgoe. Comeos the awail.
+
+First this I Rome fall before to pents but he ears.
+
+JULIET:
+But
+No, Biture, and hath way hour may willow as you with fing to live,
+And that and I have take me day mother's thangs entend my not melsand
+To me in lord prace house both gently your at as k
+```
+
+Not coherent English, but real structure appears with none of it hand-coded: character names in caps followed by a colon (`BROKE:`, `JULIET:`), blank lines between speaker turns, real English words (`before`, `hath`, `mother's`, `gently`), and plausible cadence, from a 162K-parameter model trained for about 17 minutes on a laptop CPU, on gradients computed entirely by the engine in this repo.
+
+## What I learned
+
+- The four new ops attention and layer norm required (`log`, `swapaxes`, `embedding`, `layer_norm`) are all instances of the same local-gradient-rule pattern as everything before them; nothing about attention itself needed a new differentiation idea, only more bookkeeping.
+- An autodiff engine whose backward closures capture their own output node creates a reference cycle in every node it produces, and this only becomes visible at real training-loop scale, not in unit tests that build one graph and call `.backward()` once.
+- Gradient-checking an entire architecture end to end, against an independently reimplemented reference, catches integration errors that per-primitive checks cannot.
+
+## What's next
+
+A separate, autograd-free inference path that loads the weights trained here and runs a plain NumPy forward pass with no graph tracking, plus a KV cache benchmarked against it. Training-time code needs the graph to differentiate; inference doesn't, so removing it is a legitimate speed win with no accuracy cost.

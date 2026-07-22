@@ -139,4 +139,9 @@
   .dark ::selection {
     background: oklch(0.93 0 0 / 0.15);
   }
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.25rem;
+  }
 }

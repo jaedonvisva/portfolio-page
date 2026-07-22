@@ -32,6 +32,15 @@ export const posts: Post[] = [
     series: "autodiff-from-scratch",
     part: 1,
   },
+  {
+    slug: "tiny-transformer",
+    title: "Part 2: a transformer trained from scratch",
+    dek: "Four new gradient rules, a hand-written Adam optimizer, and a memory bug that crashed the first training run.",
+    date: "2026-07-10",
+    tags: ["autodiff", "transformers", "python"],
+    series: "autodiff-from-scratch",
+    part: 2,
+  },
 ]
 
 export function getPost(slug: string): Post | undefined {
