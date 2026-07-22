@@ -26,27 +26,38 @@ async function getAccessToken() {
 
 export async function GET() {
   if (!client_id || !client_secret || !refresh_token) {
-    return Response.json({ isPlaying: false })
+    console.log("[spotify] missing env vars")
+    return Response.json({ isPlaying: false, error: "missing env vars" })
   }
 
   try {
-    const { access_token } = await getAccessToken()
+    const tokenRes = await getAccessToken()
+    if (!tokenRes.access_token) {
+      console.log("[spotify] token refresh failed:", tokenRes)
+      return Response.json({ isPlaying: false, error: "token refresh failed", tokenRes })
+    }
 
     const response = await fetch(SPOTIFY_NOW_PLAYING_URL, {
       headers: {
-        Authorization: `Bearer ${access_token}`,
+        Authorization: `Bearer ${tokenRes.access_token}`,
       },
       next: { revalidate: 30 },
     })
 
-    if (response.status === 204 || response.status > 400) {
-      return Response.json({ isPlaying: false })
+    if (response.status === 204) {
+      return Response.json({ isPlaying: false, error: "no track currently playing (204)" })
+    }
+
+    if (response.status > 400) {
+      const errorBody = await response.text()
+      console.log("[spotify] now-playing error:", response.status, errorBody)
+      return Response.json({ isPlaying: false, error: "now-playing request failed", status: response.status, body: errorBody })
     }
 
     const data = await response.json()
 
     if (!data.item) {
-      return Response.json({ isPlaying: false })
+      return Response.json({ isPlaying: false, error: "no track item" })
     }
 
     return Response.json({
@@ -56,7 +67,8 @@ export async function GET() {
       albumArt: data.item.album.images?.[2]?.url ?? data.item.album.images?.[0]?.url,
       songUrl: data.item.external_urls.spotify,
     })
-  } catch {
-    return Response.json({ isPlaying: false })
+  } catch (err) {
+    console.log("[spotify] exception:", err)
+    return Response.json({ isPlaying: false, error: String(err) })
   }
 }
